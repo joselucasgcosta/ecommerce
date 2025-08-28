@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmarcas e Farmix</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto; margin-right: 1rem;" />
+                    <span class="logo-text" style="font-size: 1.3rem; color: var(--primary-teal)">
+                        Farmarcas e Farmix.<br>Sua melhor opção!
+                    </span>
+                    <div class="container-roll" style="margin-top: 0.1rem; font-size: 1rem; font-weight: 200;">
+                        <div class="texto-rolando">
+                            Pedidos a partir de R$ 2.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 3% de desconto no valor total.</span>
+                            Pedidos a partir de R$ 4.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 4% de desconto no valor total.</span>
+                            Pedidos a partir de R$ 5.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 5% de desconto no valor total.</span>
+                            <br>
+                            Pedidos a partir de R$ 10.000,00 em CATARINENSE, GEOLAB, LEGRAND, TEUTO ou VITAMEDIC<span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 10% de desconto adicional no valor total.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div style="display: flex; flex-direction: column;">
+                        <span id="clienteFilial" style="font-size: 0.7rem;">Carregando...</span>
+                        <span id="clienteName" style="font-weight: bold;">Carregando...</span>   
+                    </div>
+                    <div class="limite-badge">
+                        Limite Disponível: R$ <span id="limiteDisponivel">0,00</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()" style="color: white; border-color: white;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="nav">
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="home.html">Promoções</a></li>
+                <li><a href="mix-home.html" class="active">Mix</a></li>
+                <li><a href="checkout.html">Finalizar Pedido (<span id="cartCount">0</span>)</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 200px 1fr 300px; gap: 2rem;">
+                
+                <!-- Sidebar Laboratórios -->
+                <aside id="labsSidebar" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Botões serão adicionados via JavaScript -->
+                </aside>
+
+                <!-- Conteúdo principal da lista de produtos -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                    
+                    <!-- Barra de pesquisa -->
+                    <div style="margin-bottom: 1rem; width: 100%;">
+                        <input 
+                            type="text" 
+                            id="productSearch" 
+                            placeholder="Pesquise produtos por nome..." 
+                            class="form-input"
+                            oninput="filterProducts()"
+                            style="width: 100%; display: block; border: 3px solid var(--primary-teal); color: var(--primary-teal); text-transform: uppercase;"
+                        >
+                    </div>
+
+                    <!-- Lista de Produtos -->
+                    <div>
+                        <h2 id="productsTitle" style="color: var(--white); margin-bottom: 1rem;">
+                            Mix de Produtos
+                        </h2>
+                        <div id="productsGrid" class="products-grid">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo do Carrinho -->
+                <div>
+                    <div class="order-summary">
+                        <h3>Resumo do Pedido</h3>
+                        <div id="cartItems">
+                            <p style="color: var(--dark-gray); text-align: center; padding: 2rem 0;">
+                                Seu carrinho está vazio
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <div class="order-item">
+                                <span>Total:</span>
+                                <span id="cartTotal">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <button 
+                            id="checkoutBtn" 
+                            class="btn btn-accent" 
+                            style="width: 100%; margin-top: 1rem;" 
+                            onclick="goToCheckout()"
+                            disabled
+                        >
+                            Finalizar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let cliente = null;
+        let produtos = [];
+        let carrinho = [];
+
+        // Funções de login e logout
+        function checkLogin() {
+            const clienteData = localStorage.getItem('cliente');
+            if (!clienteData) { window.location.href = 'index.html'; return false; }
+            cliente = JSON.parse(clienteData);
+            return true;
+        }
+        function logout() {
+            localStorage.removeItem('cliente');
+            localStorage.removeItem('carrinho');
+            window.location.href = 'index.html';
+        }
+        function loadClienteData() {
+            document.getElementById('clienteName').textContent = cliente.nome;
+            document.getElementById('clienteFilial').textContent = cliente.uf;
+            document.getElementById('limiteDisponivel').textContent = 
+                cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        } 
+
+        function loadPriceSystem() {
+            document.getElementById('productsTitle').textContent = 
+                cliente.filial === 1 
+                    ? 'Mix de Produtos - Preço Líquido' 
+                    : 'Mix de Produtos - Preço Final';  
+        }
+
+        // Filtro de produtos
+        function filterProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            const laboratorioSelecionado = getSelectedLab();
+            
+            let produtosFiltrados = produtos.filter(produto => produto.promocao === false && produto.filial === cliente.filial);
+
+            if (laboratorioSelecionado && laboratorioSelecionado !== 'Todos') {
+                produtosFiltrados = produtosFiltrados.filter(produto => produto.laboratorio === laboratorioSelecionado);
+            }
+
+            if (searchTerm) {
+                produtosFiltrados = produtosFiltrados.filter(produto => produto.nome.toLowerCase().includes(searchTerm));
+            }
+
+            renderProdutos(produtosFiltrados);
+        }
+
+        function selectLab(lab) {
+            setSelectedLab(lab);
+            filterProducts();
+        }
+
+        function getSelectedLab() {
+            const activeButton = document.querySelector('#labsSidebar .active');
+            return activeButton ? activeButton.dataset.lab : null;
+        }
+
+        function setSelectedLab(lab) {
+            const buttons = document.querySelectorAll('#labsSidebar .lab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            const activeBtn = Array.from(buttons).find(btn => btn.dataset.lab === lab);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        // Renderiza produtos
+        function renderProdutos(produtosFiltrados = null) {
+            const grid = document.getElementById('productsGrid');
+
+            if (!produtosFiltrados) {
+                produtosFiltrados = produtos.filter(produto => produto.promocao === false);
+            }
+
+            if (produtosFiltrados.length === 0) {
+                grid.innerHTML = `<p style="text-align: center; color: var(--medium-gray);">Nenhum produto encontrado</p>`;
+                return;
+            }
+
+            grid.innerHTML = produtosFiltrados.map(produto => {
+                const vantagemFlag = produto.destaque === true
+                    ? `<div class="flag-vantagem">${produto.destaque_texto}</div>`
+                    : '';
+                return `
+                    
+                    <div class="product-item fade-in">
+                        ${vantagemFlag}
+                        <div class="product-info">
+                            <div class="product-header">
+                                <span class="product-name">${produto.nome} - </span>
+                                <span class="product-price">
+                                    R$ ${produto.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div class="product-promo">
+                                Lab.: ${produto.laboratorio} | Cód.: ${produto.id} | EAN.: ${produto.descricao} | Disp.: ${produto.estoque} und | <strong>Qtde Mín.: ${produto.quantidade_promocao} und </strong>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <div class="quantity-controls">
+                                <button class="quantity-btn" onclick="changeQuantity(${produto.id_cont}, -1)">-</button>
+                                <input 
+                                    type="number" 
+                                    class="quantity-input" 
+                                    id="qty-${produto.id_cont}" 
+                                    value="0" 
+                                    min="0" 
+                                    max="2000"
+                                    onchange="updateQuantity(${produto.id_cont}, this.value)"
+                                    onblur="updateQuantity(${produto.id_cont}, this.value)"
+                                >
+                                <button class="quantity-btn" onclick="changeQuantity(${produto.id_cont}, 1)">+</button>
+                                <button class="btn btn-primary" onclick="addToCart(${produto.id_cont})">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadProdutos() {
+            try {
+                const response = await fetch('/api/itens');
+                const data = await response.json();
+                produtos = data;
+                renderProdutos();
+                selectLab('Todos');
+                populateLabsSidebar();
+            } catch (errorData) {
+                console.error('Erro ao carregar produtos:', errorData);
+            }
+        }
+
+        // Quantidade
+        function changeQuantity(produtoIdCont, delta) {
+            const input = document.getElementById(`qty-${produtoIdCont}`);
+            const currentValue = parseInt(input.value) || 0;
+            const produto = produtos.find(p => p.id_cont === produtoIdCont);
+            const min = produto.quantidade_promocao;
+            const max = produto.quantidade_max_promocao;
+            let newValue = (currentValue === 0 && delta > 0) ? min : currentValue + delta;
+            newValue = Math.max(min, Math.min(max, newValue));
+            input.value = newValue;
+        }
+        function updateQuantity(produtoIdCont, value) {
+            const produto = produtos.find(p => p.id_cont === produtoIdCont);
+            const input = document.getElementById(`qty-${produtoIdCont}`);
+            let newValue = parseInt(value);
+            if (isNaN(newValue) || newValue === 0) { input.value = 0; return; }
+            const min = produto.quantidade_promocao;
+            const max = produto.quantidade_max_promocao;
+            input.value = Math.min(Math.max(newValue, min), max);
+        }
+
+        // Carrinho
+        function addToCart(produtoIdCont) {
+            const quantidade = parseInt(document.getElementById(`qty-${produtoIdCont}`).value) || 0;
+            if (quantidade === 0) { alert('Selecione uma quantidade válida'); return; }
+            const produto = produtos.find(p => p.id_cont === produtoIdCont);
+            const itemExistente = carrinho.find(item => item.id_cont === produtoIdCont);
+            if (itemExistente) itemExistente.quantidade += quantidade;
+            else carrinho.push({ 
+                id_cont: produto.id_cont,
+                id: produto.id,
+                nome: produto.nome,
+                preco: produto.preco,
+                laboratorio: produto.laboratorio,
+                quantidade 
+            });
+            document.getElementById(`qty-${produtoIdCont}`).value = 0;
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartCount = document.getElementById('cartCount');
+            const cartTotal = document.getElementById('cartTotal');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+
+            if (carrinho.length === 0) {
+                cartItems.innerHTML = '<p style="color: var(--primary-blue); text-align: center; padding: 2rem 0;">Seu carrinho está vazio</p>';
+                cartCount.textContent = '0';
+                cartTotal.textContent = 'R$ 0,00';
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            const totalItens = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+            const totalValor = carrinho.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+
+            cartItems.innerHTML = carrinho.map(item => `
+                <div class="order-item">
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.8rem">${item.nome}</div>
+                        <div style="font-size: 0.8rem; color: var(--primary-blue);">${item.quantidade}x R$ ${item.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--primary-blue); font-size: 13px">R$ ${(item.preco * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button onclick="removeFromCart(${item.id_cont})" style="background: none; border: none; color: var(--dark-gray); cursor: pointer; font-size: 0.8rem;">Remover</button>
+                    </div>
+                </div>
+            `).join('');
+
+            cartCount.textContent = totalItens;
+            cartTotal.textContent = `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            checkoutBtn.disabled = false;
+        }
+
+        function removeFromCart(produtoIdCont) {
+            carrinho = carrinho.filter(item => item.id_cont !== produtoIdCont);
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            updateCartDisplay();
+        }
+
+        function goToCheckout() {
+            if (carrinho.length === 0) { alert('Seu carrinho está vazio'); return; }
+            window.location.href = 'checkout.html';
+        }
+
+        // Sidebar
+        function populateLabsSidebar() {
+            const sidebar = document.getElementById('labsSidebar');
+            sidebar.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            allBtn.textContent = 'TODOS';
+            allBtn.className = 'lab-btn active';
+            allBtn.dataset.lab = 'Todos';
+            allBtn.onclick = () => selectLab('Todos');
+            sidebar.appendChild(allBtn);
+
+            const labsFilial = produtos
+                .filter(p => p.filial === cliente.filial && p.promocao === false)
+                .map(p => p.laboratorio);
+
+            const labsUnicos = [...new Set(labsFilial)].sort((a, b) => a.localeCompare(b));
+
+            labsUnicos.forEach(lab => {
+                const btn = document.createElement('button');
+                btn.textContent = lab;
+                btn.className = 'lab-btn';
+                btn.dataset.lab = lab;
+                btn.onclick = () => selectLab(lab);
+                sidebar.appendChild(btn);
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkLogin()) return;
+            loadPriceSystem();
+            loadClienteData();
+            loadProdutos();
+
+            const carrinhoSalvo = localStorage.getItem('carrinho');
+            if (carrinhoSalvo) { carrinho = JSON.parse(carrinhoSalvo); updateCartDisplay(); }
+        });
+    </script>
+</body>
+</html>

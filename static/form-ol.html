@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informar Pedido OL</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header simples -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content" style="justify-content: center;">
+                <div class="logo">
+                    <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto;" />
+                    <span class="logo-text" style="font-size: 1.5rem; color: var(--primary-teal); margin-left: 1rem;">
+                        Informar Pedido OL
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="main-content">
+        <div class="container">
+            <div style="display: flex; justify-content: center; margin-top: 2rem;">
+                <div class="card" style="max-width: 500px; width: 100%;">
+                    <form id="pedidoOlForm">
+                        <!-- CNPJ ou Código do Cliente -->
+                        <div class="form-group">
+                            <label for="cnpjCodCli" class="form-label">CNPJ do Cliente</label>
+                            <input type="text" id="cnpjCodCli" name="cnpjCodCli" class="form-input"
+                                placeholder="Digite o CNPJ ou Código do Cliente" required minlength="14" data-label="CNPJ do Cliente">
+                        </div>
+
+                        <!-- Laboratório -->
+                        <div class="form-group">
+                            <label for="laboratorio" class="form-label">Laboratório da OL</label>
+                            <input type="text" id="laboratorio" name="laboratorio" class="form-input"
+                                placeholder="Digite o laboratório" required minlength="4" data-label="Laboratório">
+                        </div>
+
+                        <!-- Nome do representante OL -->
+                        <div class="form-group">
+                            <label for="representanteOl" class="form-label">Nome do Representante OL</label>
+                            <input type="text" id="representanteOl" name="representanteOl" class="form-input"
+                                placeholder="Digite o nome do representante" required minlength="6" data-label="Nome do Representante">
+                        </div>
+
+                        <!-- Valor do pedido -->
+                        <div class="form-group">
+                            <label for="valorPedido" class="form-label">Valor do Pedido (R$)</label>
+                            <input type="number" id="valorPedido" name="valorPedido" class="form-input"
+                                placeholder="Digite o valor do pedido" min="300" step="0.01" required>
+                        </div>
+
+                        <!--Responsável pela informação -->
+                        <div class="form-group">
+                            <label for="responsavel" class="form-label">Responsável pelas informações</label>
+                            <input type="text" id="responsavel" name="responsavel" class="form-input"
+                                placeholder="Digite seu nome" required minlength="6" data-label="Responsável">
+                        </div>
+                        
+                        <!--Carregar brindes -->
+                        <div class="form-group">
+                            <label for="brindeDescricao" class="form-label">Brinde</label>
+                            <select id="brindeDescricao" name="brinde" class="form-input" disabled>
+                                <option value="">Preencha as informações primeiro</option>
+                            </select>
+                        </div>
+                        
+                        <!--Carregar quantidades de brindes -->
+                        <div class="form-group">
+                            <label for="quantidadeBrinde" class="form-label">Quantidade</label>
+                            <input type="number" id="quantidadeBrinde" name="quantidade" class="form-input" disabled min="1" placeholder="Selecione um brinde primeiro">
+                        </div>
+
+
+                        <!-- Botões -->
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                Salvar
+                            </button>
+                            <button type="button" id="btnVoltar" class="btn btn-secondary" style="flex: 1;">
+                                Voltar
+                            </button>
+                        </div>
+
+                        <div id="formMessage" class="alert" style="display: none; margin-top: 1rem;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Formatação automática do CNPJ
+        document.getElementById('cnpjCodCli').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length <= 14) {
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            }
+            
+            e.target.value = value;
+        });
+
+        // Lista dos campos obrigatórios
+        const textInputs = ['cnpjCodCli', 'laboratorio', 'representanteOl', 'responsavel'];
+
+        // Função para verificar se todos os campos estão preenchidos
+        function verificarCamposPreenchidos() {
+            return textInputs.every(id => {
+                const input = document.getElementById(id);
+                return input && input.value.trim().length > 0;
+            });
+        }
+
+        // Função para habilitar o select de brindes se os campos estiverem preenchidos
+        let brindesJaCarregados = false;
+
+        function atualizarEstadoSelects() {
+            const brindeSelect = document.getElementById('brindeDescricao');
+            const quantidadeSelect = document.getElementById('quantidadeBrinde');
+
+            if (verificarCamposPreenchidos()) {
+                brindeSelect.disabled = false;
+
+                // Só carrega os brindes uma vez
+                if (!brindesJaCarregados) {
+                    carregarBrindes();
+                    brindesJaCarregados = true;
+                }
+            } else {
+                brindeSelect.disabled = true;
+                quantidadeSelect.disabled = true;
+                brindeSelect.innerHTML = '<option value="">Preencha as informações primeiro</option>';
+                quantidadeSelect.innerHTML = '<option value="">Selecione um brinde primeiro</option>';
+                brindesJaCarregados = false;
+            }
+        }
+
+        // Adiciona o listener para cada campo
+        textInputs.forEach(id => {
+            const input = document.getElementById(id);
+            input.addEventListener('input', () => {
+                input.value = input.value.toUpperCase();
+                atualizarEstadoSelects();
+            });
+        });
+
+        // Carregar brindes e quantidades
+        let brindesCache = [];
+
+        async function carregarBrindes() {
+            try {
+                const response = await fetch('/api/brindes');
+                const result = await response.json();
+                const select = document.getElementById('brindeDescricao');
+                const quantidadeSelect = document.getElementById('quantidadeBrinde');
+
+                select.innerHTML = '<option value="">Preencha as informações primeiro</option>';
+                brindesCache = result.brindes || [];
+
+                brindesCache.forEach(brinde => {
+                    const option = document.createElement('option');
+                    option.value = brinde.brinde_id;
+                    option.textContent = brinde.brinde;
+                    select.appendChild(option);
+                });
+
+                // Escuta mudança no brinde selecionado
+                select.addEventListener('change', () => {
+                    const brindeId = parseInt(select.value);
+                    const brindeSelecionado = brindesCache.find(b => b.brinde_id === brindeId);
+
+                    if (brindeSelecionado && brindeSelecionado.estoque > 0) {
+                        quantidadeSelect.disabled = false;
+                        quantidadeSelect.min = 1;
+                        quantidadeSelect.max = brindeSelecionado.estoque;
+                        quantidadeSelect.placeholder = `Digite a quantidadde`;
+                        quantidadeSelect.value = ''; // limpa valor anterior
+                    } else {
+                        quantidadeSelect.disabled = true;
+                        quantidadeSelect.value = '';
+                        quantidadeSelect.placeholder = 'Sem estoque disponível';
+                        quantidadeSelect.removeAttribute('min');
+                        quantidadeSelect.removeAttribute('max');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar brindes:', error);
+                document.getElementById('brindeDescricao').innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // carregarBrindes();
+            atualizarEstadoSelects() // garante que o estado inicial esteja correto
+        });
+
+        // Voltar para index.html
+        document.getElementById('btnVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // Submissão do formulário
+        document.getElementById('pedidoOlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const quantidade = parseInt(document.getElementById('quantidadeBrinde').value);
+            const maxEstoque = parseInt(document.getElementById('quantidadeBrinde').max);
+
+            // if (isNaN(quantidade) || quantidade < 1 || quantidade > maxEstoque) {
+            //     formMessage.style.display = 'block  ';
+            //     formMessage.classList.add('alert-error');
+            //     formMessage.textContent = `A quantidade deve estar entre 1 e ${maxEstoque}.`;
+            //     return;
+            // }
+
+            if (quantidade > maxEstoque) {
+                formMessage.style.display = 'block  ';
+                formMessage.classList.add('alert-error');
+                formMessage.textContent = `A quantidade deve estar entre 1 e ${maxEstoque}.`;
+                return;
+            }
+
+            const formMessage = document.getElementById('formMessage');
+            formMessage.style.display = 'none';
+            formMessage.textContent = '';
+            formMessage.className = 'alert';
+            
+            // Captura os dados para passar ao backend
+            const pedidoData = {
+                cnpj_codcli: document.getElementById('cnpjCodCli').value,
+                laboratorio: document.getElementById('laboratorio').value,
+                representante_ol: document.getElementById('representanteOl').value,
+                valor_pedido: parseFloat(document.getElementById('valorPedido').value),
+                responsavel: document.getElementById('responsavel').value,
+                brinde_id: document.getElementById('brindeDescricao').value || "0",
+                quantidade: document.getElementById('quantidadeBrinde').value || "0"
+            };
+
+            // Validação de comprimento mínimo
+            let mensagensErro = [];
+
+            for (const id of textInputs) {
+                const input = document.getElementById(id);
+                const value = input.value.trim();
+                const minLength = parseInt(input.getAttribute('minlength'));
+
+                if (value.length < minLength) {
+                    const label = input.getAttribute('data-label') || id; // opcional: usar um label mais amigável
+                    mensagensErro.push(`• O campo "${label}" deve ter pelo menos ${minLength} caracteres.`);
+                }
+            }
+
+            if (mensagensErro.length > 0) {
+                formMessage.style.display = 'block';
+                formMessage.classList.add('alert-error');
+                formMessage.innerHTML = mensagensErro.join('<br>');
+                return;
+            }
+
+
+            try {
+                const response = await fetch('/api/pedido-ol', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pedidoData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    formMessage.style.display = 'block';
+                    formMessage.classList.add('alert-success');
+                    formMessage.textContent = 'Pedido OL salvo com sucesso!';
+                    document.getElementById('pedidoOlForm').reset();
+
+                    // Redirecionar para index.html após 1s
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+
+                } else {
+                    formMessage.style.display = 'block';
+                    formMessage.classList.add('alert-error');
+                    formMessage.textContent = data.error || 'Erro ao salvar pedido.';
+                }
+
+            } catch (error) {
+                formMessage.style.display = 'block';
+                formMessage.classList.add('alert-error');
+                formMessage.textContent = 'Erro ao salvar pedido.';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

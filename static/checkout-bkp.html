@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Pedido do Mega Feirão</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto; margin-right: 1rem;" />
+                    <span class="logo-text" style="font-size: 1.5rem; color: var(--primary-teal)">Farmarcas e Farmix. Sua melhor opção!</span>
+                </div>
+                <div class="user-info">
+                    <span id="clienteName">Carregando...</span>
+                    <div class="limite-badge">
+                        Limite Disponível: R$ <span id="limiteDisponivel">0,00</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()" style="color: white; border-color: white;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="nav">
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="home.html">Promoções</a></li>
+                <li><a href="checkout.html" class="active">Finalizar Pedido</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <h2 style="color: var(--light-gray); margin-bottom: 2rem;">
+                Finalizar Pedido
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 400px; gap: 3rem;">
+                <!-- Formulário de Finalização -->
+                <div>
+                    <!-- Resumo dos Itens -->
+                    <div class="card">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">
+                            Itens do Pedido
+                        </h3>
+                        <div id="orderItems">
+                            <!-- Itens serão carregados aqui -->
+                        </div>
+                    </div>
+
+                    <!-- Plano de Pagamento -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">
+                            Plano de Pagamento
+                        </h3>
+                        
+                        <form id="checkoutForm">
+                            <div class="form-group">
+                                <label for="planoPagamento" class="form-label">Selecione o plano de pagamento</label>
+                                <select id="planoPagamento" name="planoPagamento" class="form-select" required>
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="avista">À Vista (5% de desconto)</option>
+                                    <option value="30dias">30 dias</option>
+                                    <option value="60dias">60 dias</option>
+                                    <option value="90dias">90 dias</option>
+                                    <option value="parcelado_2x">Parcelado em 2x</option>
+                                    <option value="parcelado_3x">Parcelado em 3x</option>
+                                    <option value="parcelado_6x">Parcelado em 6x</option>
+                                </select>
+                            </div>
+
+                            <div id="paymentDetails" style="margin-top: 1rem; padding: 1rem; color: var(--light-gray); background-color: var(--hard-blue); border-radius: 5px;">
+                                <p id="paymentDescription"></p>
+                            </div>
+
+                            <!--<div class="form-group" style="margin-top: 2rem;">
+                                <label for="observacoes" class="form-label">Observações (opcional)</label>
+                                <textarea 
+                                    id="observacoes" 
+                                    name="observacoes" 
+                                    class="form-input" 
+                                    rows="4" 
+                                    placeholder="Digite aqui observações sobre o pedido..."
+                                ></textarea>
+                            </div>-->
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Resumo Final -->
+                <div>
+                    <div class="card" style="position: sticky; top: 2rem;">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">
+                            Resumo do Pedido
+                        </h3>
+                        <span>Pedido mínimo: R$300,00<br></span>
+                        <span>Impostos não inclusos<br></span>
+                        
+                        <div class="order-item">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">R$ 0,00</span>
+                        </div>
+                        
+                        <div class="order-item" id="discountRow" style="display: none;">
+                            <span style="color: var(--success);">Desconto (5%):</span>
+                            <span id="discount" style="color: var(--success);">- R$ 0,00</span>
+                        </div>
+                        
+                        <div class="order-item" style="font-size: 1.2rem; font-weight: bold; color: var(--yellow-light); border-top: 2px solid var(--light-gray); padding-top: 1rem;">
+                            <span>Total Final:</span>
+                            <span id="totalFinal">R$ 0,00</span>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                            <div style="font-size: 0.9rem; color: var(--light-gray); margin-bottom: 1rem;">
+                                <strong>Limite disponível:</strong> R$ <span id="limiteRestante">0,00</span>
+                            </div>
+                            
+                            <div id="limitAlert" class="alert alert-warning" style="display: none;">
+                                ⚠️ O valor do pedido excede seu limite disponível!
+                            </div>
+                        </div>
+                        
+                        <button 
+                            id="finalizeBtn" 
+                            class="btn btn-accent" 
+                            style="width: 100%; margin-top: 1.5rem; font-size: 1.1rem; padding: 1rem;" 
+                            onclick="finalizarPedido()"
+                            disabled
+                        >
+                            Confirmar Pedido
+                        </button>
+                        
+                        <button 
+                            class="btn btn-outline" 
+                            style="width: 100%; margin-top: 1rem;" 
+                            onclick="voltarParaCompras()"
+                        >
+                            Continuar Comprando
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; max-width: 500px; width: 90%;">
+            <h3 style="color: var(--primary-blue); margin-bottom: 1rem;">Pedido Enviado com Sucesso!</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--medium-gray);">Seu pedido foi registrado e será processado em breve.</p>
+            <div style="text-align: center;">
+                <button class="btn btn-primary" onclick="voltarParaInicio()">Voltar ao Início</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cliente = null;
+        let carrinho = [];
+        let subtotalValue = 0;
+        let totalFinalValue = 0;
+
+        // Verificar se está logado
+        function checkLogin() {
+            const clienteData = localStorage.getItem('cliente');
+            if (!clienteData) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            cliente = JSON.parse(clienteData);
+            return true;
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('cliente');
+            localStorage.removeItem('carrinho');
+            window.location.href = 'index.html';
+        }
+
+        // Carregar dados do cliente
+        function loadClienteData() {
+            document.getElementById('clienteName').textContent = cliente.nome;
+            document.getElementById('limiteDisponivel').textContent = 
+                cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        // Carregar itens do pedido
+        function loadOrderItems() {
+            const carrinhoSalvo = localStorage.getItem('carrinho');
+            if (!carrinhoSalvo) {
+                window.location.href = 'home.html';
+                return;
+            }
+            
+            carrinho = JSON.parse(carrinhoSalvo);
+            
+            if (carrinho.length === 0) {
+                window.location.href = 'home.html';
+                return;
+            }
+
+            renderOrderItems();
+            calculateTotals();
+        }
+
+        // Renderizar itens do pedido
+        function renderOrderItems() {
+            const container = document.getElementById('orderItems');
+            
+            container.innerHTML = carrinho.map(item => `
+                <div class="order-item">
+                    <div>
+                        <div style="font-weight: 500;">${item.nome}</div>
+                        <div style="font-size: 0.9rem; color: var(--light-gray);">
+                            Quantidade: ${item.quantidade} | Preço unitário: R$ ${item.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div style="font-weight: bold;">
+                        R$ ${(item.preco * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Calcular totais
+        function calculateTotals() {
+            subtotalValue = carrinho.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+            subtotalQtde = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+            
+            const planoPagamento = document.getElementById('planoPagamento').value;
+            let desconto = 0;
+            
+            if (planoPagamento === 'avista') {
+                desconto = subtotalValue * 0.05;
+            }
+            
+            totalFinalValue = subtotalValue - desconto;
+            
+            // Atualizar interface
+            document.getElementById('subtotal').textContent = 
+                `R$ ${subtotalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            
+            if (desconto > 0) {
+                document.getElementById('discountRow').style.display = 'flex';
+                document.getElementById('discount').textContent = 
+                    `- R$ ${desconto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            } else {
+                document.getElementById('discountRow').style.display = 'none';
+            }
+            
+            document.getElementById('totalFinal').textContent = 
+                `R$ ${totalFinalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            
+            document.getElementById('limiteRestante').textContent = 
+                cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            
+            // Verificar limite
+            const limitAlert = document.getElementById('limitAlert');
+            const finalizeBtn = document.getElementById('finalizeBtn');
+            
+            if (totalFinalValue > cliente.limite_disponivel) {
+                limitAlert.textContent = 'O valor do pedido excede seu limite disponível';
+                limitAlert.style.display = 'block';
+                finalizeBtn.disabled = true;
+                finalizeBtn.textContent = 'Limite Insuficiente';
+
+            } else if (!planoPagamento) {
+                limitAlert.textContent = 'Selecione um plano de pagamento';
+                limitAlert.style.display = 'block';
+                finalizeBtn.disabled = true;
+                finalizeBtn.textContent = 'Selecione o Plano';
+
+            } else {
+                limitAlert.style.display = 'none';
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Confirmar Pedido';
+            }
+        }
+
+        // Carregar planos de pagamento do Oracle
+        async function carregarPlanosPagamento() {
+            try {
+                const response = await fetch('/api/cliente/planos-pagamento');
+                if (response.ok) {
+                    const planos = await response.json();
+                    const select = document.getElementById('planoPagamento');
+                    
+                    // Limpar opções existentes (manter apenas a primeira)
+                    select.innerHTML = '<option value="">Selecione uma opção</option>';
+                    
+                    // Adicionar planos do Oracle
+                    planos.forEach(plano => {
+                        const option = document.createElement('option');
+                        option.value = plano.codigo;
+                        option.textContent = plano.descricao;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error('Erro ao carregar planos de pagamento');
+                    // Fallback para planos padrão se Oracle não estiver disponível
+                    carregarPlanosDefault();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar planos de pagamento:', error);
+                // Fallback para planos padrão se Oracle não estiver disponível
+                carregarPlanosDefault();
+            }
+        }
+
+        // Planos padrão como fallback
+        function carregarPlanosDefault() {
+            const select = document.getElementById('planoPagamento');
+            const planos = [
+                { value: 'avista', text: 'À Vista (5% de desconto)' },
+                { value: '30dias', text: '30 dias' },
+                { value: '60dias', text: '60 dias' },
+                { value: '90dias', text: '90 dias' },
+                { value: 'parcelado_2x', text: 'Parcelado em 2x' },
+                { value: 'parcelado_3x', text: 'Parcelado em 3x' },
+                { value: 'parcelado_6x', text: 'Parcelado em 6x' }
+            ];
+            
+            planos.forEach(plano => {
+                const option = document.createElement('option');
+                option.value = plano.value;
+                option.textContent = plano.text;
+                select.appendChild(option);
+            });
+        }
+
+        // Configurar eventos do plano de pagamento
+        function setupPaymentPlan() {
+            const select = document.getElementById('planoPagamento');
+            const details = document.getElementById('paymentDetails');
+            const description = document.getElementById('paymentDescription');
+            
+            select.addEventListener('change', function() {
+                const value = this.value;
+                
+                if (value) {
+                    details.style.display = 'block';
+                    
+                    switch(value) {
+                        case 'avista':
+                            description.textContent = 'Pagamento à vista com 5% de desconto sobre o valor total.';
+                            break;
+                        case '30dias':
+                            description.textContent = 'Pagamento em 30 dias corridos a partir da data do pedido.';
+                            break;
+                        case '60dias':
+                            description.textContent = 'Pagamento em 60 dias corridos a partir da data do pedido.';
+                            break;
+                        case '90dias':
+                            description.textContent = 'Pagamento em 90 dias corridos a partir da data do pedido.';
+                            break;
+                        case 'parcelado_2x':
+                            description.textContent = 'Pagamento parcelado em 2 vezes (30 e 60 dias).';
+                            break;
+                        case 'parcelado_3x':
+                            description.textContent = 'Pagamento parcelado em 3 vezes (30, 60 e 90 dias).';
+                            break;
+                        case 'parcelado_6x':
+                            description.textContent = 'Pagamento parcelado em 6 vezes mensais.';
+                            break;
+                    }
+                } else {
+                    details.style.display = 'none';
+                }
+                
+                calculateTotals();
+            });
+        }
+
+        // Finalizar pedido
+        async function finalizarPedido() {
+            const planoPagamento = document.getElementById('planoPagamento').value;
+            console.log('planoPagamento:', planoPagamento);
+            /*const observacoes = document.getElementById('observacoes').value;*/
+            
+            if (!planoPagamento) {
+                alert('Selecione um plano de pagamento');
+                return;
+            }
+            
+            if (totalFinalValue > cliente.limite_disponivel) {
+                alert('O valor do pedido excede seu limite disponível');
+                return;
+            }
+
+            if (totalFinalValue < 300) {
+                alert('O pedido mínimo é de R$ 300,00');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/pedidos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cliente_id: cliente.id,
+                        itens: carrinho,
+                        plano_pagamento: planoPagamento,
+                        /*observacoes: observacoes,*/
+                        valor_total: totalFinalValue
+                    })
+                });
+                
+                if (response.ok) {
+                    // Limpar carrinho
+                    localStorage.removeItem('carrinho');
+                    
+                    // Mostrar modal de confirmação
+                    document.getElementById('confirmModal').style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    alert('Erro ao finalizar pedido: ' + (errorData.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao finalizar pedido. Tente novamente.' + (error.message || error));
+            }
+        }
+
+        // Voltar para compras
+        function voltarParaCompras() {
+            window.location.href = 'home.html';
+        }
+
+        // Voltar para início
+        function voltarParaInicio() {
+            window.location.href = 'home.html';
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkLogin()) return;
+            
+            loadClienteData();
+            loadOrderItems();
+            carregarPlanosPagamento(); // Carregar planos do Oracle
+            setupPaymentPlan();
+        });
+    </script>
+</body>
+</html>
+

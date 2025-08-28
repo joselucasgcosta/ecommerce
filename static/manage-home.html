@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmarcas e Farmix</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto; margin-right: 1rem;" />
+                    <span class="logo-text" style="font-size: 1.3rem; color: var(--primary-teal)">
+                        Farmarcas e Farmix.<br>Sua melhor opção!
+                    </span>
+                    <div class="container-roll" style="margin-top: 0.1rem; font-size: 1rem; font-weight: 200;">
+                        <div class="texto-rolando">
+                            Pedidos a partir de R$ 2.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 3% de desconto no valor total.</span>
+                            Pedidos a partir de R$ 4.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 4% de desconto no valor total.</span>
+                            Pedidos a partir de R$ 5.000,00 <span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 5% de desconto no valor total.</span>
+                            <br>
+                            Pedidos a partir de R$ 10.000,00 em CATARINENSE, GEOLAB, LEGRAND, TEUTO ou VITAMEDIC<span style="color: var(--primary-teal); font-size: large; font-weight: bold;"> tem 10% de desconto adicional no valor total.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div style="display: flex; flex-direction: column;">
+                        <span id="codacess" style="font-size: 0.7rem;">Carregando...</span>
+                        <span id="username" style="font-weight: bold;">Carregando...</span>   
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()" style="color: white; border-color: white;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="nav">
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="manage-home.html" class="active">Atualizar</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <div style="display: flex; grid-template-columns: 200px 1fr 300px; gap: 2rem;">
+                <!-- Sidebar Responsaveis -->
+                <aside id="labsSidebar" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Botões serão adicionados via JavaScript -->
+                </aside>
+
+                <!-- Conteúdo principal da lista de pedidos -->
+                    <div>
+                        <h2 style="color: var(--white); margin-bottom: 1rem;">
+                            Resultados
+                            <div id="totalPedidos" style="color: white; font-size: 1.2rem; margin-bottom: 1rem;">
+                                Venda Total: R$ 0,00
+                            </div>
+                        </h2>
+                        <div id="productsGrid" class="products-grid">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script -->
+<script>
+    let pedidosOriginais = [];
+    let responsavelSelecionado = 'Todos';
+    let usuariosMap = {};
+
+    // Preencher informações do usuário logado
+    function preencherUsuarioLogado() {
+        const codacess = localStorage.getItem('codacess');
+        const username = localStorage.getItem('username');
+
+        if (codacess) {
+            document.getElementById('codacess').textContent = `ID: ${codacess}`;
+        }
+
+        if (username) {
+            document.getElementById('username').textContent = username;
+        }
+    }
+
+    // Renderiza todos os pedidos
+    function renderListaPedidos(pedidos, usuariosMap) {
+        const grid = document.getElementById('productsGrid');
+
+        if (pedidos.length === 0) {
+            grid.innerHTML = `<p style="color: white;">Nenhum pedido encontrado.</p>`;
+            return;
+        }
+
+        grid.innerHTML = pedidos.map(pedido => {
+            const clienteNome = pedido.cliente_nome || 'Cliente desconhecido';
+            const username = usuariosMap[pedido.responsavel_id] || 'Usuário desconhecido';
+
+            return `
+                <div class="product-item fade-in">
+                    <div class="product-info">
+                        <div class="product-header">
+                            <span class="product-name">${pedido.cliente_id} - ${clienteNome}</span>
+                            <span class="product-price">
+                                R$ ${pedido.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                        <div class="product-promo">
+                            ID: ${pedido.id} | Plano Pgto: ${pedido.plano_pagamento} | Qtde Itens: ${pedido.itens.length} | Status: ${pedido.status} | Responsável: ${username} und
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Cria botões na sidebar
+    function populateResponsaveisSidebar(nomesUnicos) {
+        const sidebar = document.getElementById('labsSidebar');
+        sidebar.innerHTML = '';
+
+        const todosBtn = document.createElement('button');
+        todosBtn.textContent = 'Todos';
+        todosBtn.dataset.responsavel = 'Todos';
+        todosBtn.className = 'lab-btn active';
+        todosBtn.onclick = () => selectResponsavel('Todos');
+        sidebar.appendChild(todosBtn);
+
+        nomesUnicos.forEach(nome => {
+            const btn = document.createElement('button');
+            btn.textContent = nome;
+            btn.dataset.responsavel = nome;
+            btn.className = 'lab-btn';
+            btn.onclick = () => selectResponsavel(nome);
+            sidebar.appendChild(btn);
+        });
+
+        setSelectedResponsavel('Todos');
+    }
+
+    // Aplica filtro por responsável e recalcula total
+    function selectResponsavel(nome) {
+        responsavelSelecionado = nome;
+        setSelectedResponsavel(nome);
+
+        const pedidosFiltrados = nome === 'Todos'
+            ? pedidosOriginais
+            : pedidosOriginais.filter(p => p.responsavel_nome === nome);
+
+        // 👉 Recalcula total com base no filtro
+        const totalFiltrado = pedidosFiltrados.reduce((acc, pedido) => acc + (pedido.valor_total || 0), 0);
+        document.getElementById('totalPedidos').textContent =
+            `Total dos pedidos: R$ ${totalFiltrado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+        renderListaPedidos(pedidosFiltrados, usuariosMap);
+    }
+
+    // Destaca botão ativo
+    function setSelectedResponsavel(nome) {
+        const buttons = document.querySelectorAll('#labsSidebar button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        const activeBtn = Array.from(buttons).find(btn => btn.dataset.responsavel === nome);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Carrega pedidos e usuários
+    async function loadTodosPedidos() {
+        try {
+            const [pedidosRes, usuariosRes] = await Promise.all([
+                fetch('/api/pedidos'),
+                fetch('/api/users/all')
+            ]);
+
+            const pedidos = await pedidosRes.json();
+            const usuarios = await usuariosRes.json();
+
+            // Mapeia usuários por ID
+            usuariosMap = {};
+            usuarios.forEach(u => {
+                usuariosMap[u.id] = u.username;
+            });
+
+            // Adiciona nome do responsável aos pedidos
+            pedidos.forEach(p => {
+                p.responsavel_nome = usuariosMap[p.responsavel_id] || 'Desconhecido';
+            });
+
+            pedidosOriginais = pedidos;
+
+            // Preenche sidebar com nomes únicos
+            const nomesUnicos = [...new Set(pedidos.map(p => p.responsavel_nome))];
+            populateResponsaveisSidebar(nomesUnicos);
+
+            // Renderiza lista inicial com total
+            selectResponsavel('Todos');
+
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+        }
+    }
+
+    // Logout
+    function logout() {
+        localStorage.removeItem('codacess');
+        window.location.href = 'manage.html';
+    }
+
+    // Chamada automática ao carregar a página
+    window.onload = () => {
+        preencherUsuarioLogado();
+        loadTodosPedidos();
+    };
+</script>

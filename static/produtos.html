@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itens do Mega Feirão</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                    <div class="logo">
+                        <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto; margin-right: 1rem;" />
+                        <span class="logo-text">O melhor Mega Feirão de Minas Gerais tá aqui!</span>
+                    </div>
+                <div class="user-info">
+                    <span id="clienteName">Carregando...</span>
+                    <div class="limite-badge">
+                        Limite Disponível: R$ <span id="limiteDisponivel">0,00</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()" style="color: white; border-color: white;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="nav">
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="home.html">Promoções</a></li>
+                <li><a href="produtos.html" class="active">Produtos Neo Química</a></li>
+                <li><a href="combos.html">Sugestões</a></li>
+                <li><a href="checkout.html">Finalizar Pedido (<span id="cartCount">0</span>)</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+                <!-- Lista de Produtos -->
+                <div>
+                    <h2 style="color: var(--primary-blue); margin-bottom: 1rem;">
+                        Produtos Promocionais
+                    </h2>
+                    
+                    <div id="productsGrid" class="products-grid">
+                        <!-- Produtos serão carregados aqui via JavaScript -->
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo do Carrinho -->
+                <div>
+                    <div class="order-summary">
+                        <h3>Resumo do Pedido</h3>
+                        <div id="cartItems">
+                            <p style="color: var(--ligth-gray); text-align: center; padding: 2rem 0;">
+                                Seu carrinho está vazio
+                            </p>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <div class="order-item">
+                                <span>Total:</span>
+                                <span id="cartTotal">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <button 
+                            id="checkoutBtn" 
+                            class="btn btn-accent" 
+                            style="width: 100%; margin-top: 1rem;" 
+                            onclick="goToCheckout()"
+                            disabled
+                        >
+                            Finalizar Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let cliente = null;
+        let produtos = [];
+        let carrinho = [];
+
+        // Verificar se está logado
+        function checkLogin() {
+            const clienteData = localStorage.getItem('cliente');
+            if (!clienteData) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            cliente = JSON.parse(clienteData);
+            return true;
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('cliente');
+            localStorage.removeItem('carrinho');
+            window.location.href = 'index.html';
+        }
+
+        // Carregar dados do cliente
+        function loadClienteData() {
+            document.getElementById('clienteName').textContent = cliente.nome;
+            document.getElementById('limiteDisponivel').textContent = 
+                cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        // Carregar produtos
+        async function loadProdutos() {
+            try {
+                const response = await fetch('/api/itens');
+                const data = await response.json();
+                produtos = data;
+                renderProdutos();
+            } catch (errorData) {
+                console.error('Erro ao carregar produtos:', errorData);
+            }
+        }
+
+        // Renderizar produtos
+        function renderProdutos() {
+            const grid = document.getElementById('productsGrid');
+
+            // Filtra apenas produtos com promocao = true
+            const produtosPromocao = produtos.filter(produto => produto.promocao === false);
+
+            if (produtosPromocao.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: var(--medium-gray);">Nenhum item disponível</p>';
+                return;
+            }
+
+            grid.innerHTML = produtosPromocao.map(produto => {
+                const vantagemFlag = produto.destaque === true
+                    ? `<div class="flag-vantagem">LUCRE MAIS</div>`
+                    : '';
+
+                return `
+                    <div class="product-card fade-in">
+                        ${vantagemFlag}
+                        <div class="product-image">
+                            <img src="${produto.imagem_url}" alt="${produto.nome}">
+                        </div>
+                        <div class="product-info">
+                            <div class="product-name">${produto.nome}</div>
+                            <div class="product-description">${produto.descricao || 'Sem descrição'}</div>
+                            <div class="product-price">
+                                ${produto.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="product-promo">Mín.: ${produto.quantidade_promocao} unidades</div>
+                            <div class="product-promo">Máx.: ${produto.quantidade_max_promocao} unidades</div>
+                            <div class="product-promo">Disp.: ${produto.estoque} unidades</div>
+                            
+                            <div class="quantity-controls">
+                                <button class="quantity-btn" onclick="changeQuantity(${produto.id}, -1)">-</button>
+                                <input 
+                                    type="number" 
+                                    class="quantity-input" 
+                                    id="qty-${produto.id}" 
+                                    value="0" 
+                                    min="0" 
+                                    max="2000"
+                                    onchange="updateQuantity(${produto.id}, this.value)"
+                                    onblur="updateQuantity(${produto.id}, this.value)"
+                                >
+                                <button class="quantity-btn" onclick="changeQuantity(${produto.id}, 1)">+</button>
+                            </div>
+                            
+                            <button 
+                                class="btn btn-primary" 
+                                style="width: 100%;" 
+                                onclick="addToCart(${produto.id})"
+                            >
+                                Adicionar ao Carrinho
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Alterar quantidade
+        function changeQuantity(produtoId, delta) {
+            const input = document.getElementById(`qty-${produtoId}`);
+            const currentValue = parseInt(input.value) || 0;
+            const produto = produtos.find(p => p.id === produtoId);
+
+            const min = produto.quantidade_promocao;
+            const max = 2000;
+
+            let newValue;
+
+            if (currentValue === 0 && delta > 0) {
+                newValue = min; // pula direto pro mínimo ao clicar "+"
+            } else {
+                newValue = currentValue + delta;
+            }
+
+            newValue = Math.max(min, Math.min(max, newValue));
+            input.value = newValue;
+        }
+
+        // Atualizar quantidade manualmente
+        function updateQuantity(produtoId, value) {
+            const produto = produtos.find(p => p.id === produtoId);
+            const input = document.getElementById(`qty-${produtoId}`);
+
+            const min = produto.quantidade_promocao;
+            const max = 2000;
+            let newValue = parseInt(value);
+
+            // Se campo estiver vazio ou for NaN, volta para 0
+            if (isNaN(newValue)) {
+                input.value = 0;
+                return;
+            }
+
+            // Permite 0 como valor neutro (antes de ativar a compra)
+            if (newValue === 0) {
+                input.value = 0;
+                return;
+            }
+
+            // Se o valor estiver entre min e max, aceita
+            if (newValue >= min && newValue <= max) {
+                input.value = newValue;
+            } else {
+                // Corrige para os limites
+                input.value = Math.min(Math.max(newValue, min), max);
+            }
+        }
+
+        /*// Validar quantidade ao vivo
+        function validateQuantityLive(produtoId, input) {
+            const produto = produtos.find(p => p.id === produtoId);
+            const min = produto.quantidade_promocao;
+            const max = 2000;
+
+            input.addEventListener('keydown', function (e) {
+                const val = parseInt(input.value) || 0;
+
+                // Impedir backspace/seta abaixo do mínimo
+                if ((e.key === "ArrowDown" || e.key === "Backspace") && val <= min) {
+                    e.preventDefault();
+                    input.value = min;
+                }
+
+                // Impedir seta acima do máximo
+                if (e.key === "ArrowUp" && val >= max) {
+                    e.preventDefault();
+                    input.value = max;
+                }
+            });
+
+            input.addEventListener('input', function () {
+                let val = parseInt(input.value) || 0;
+
+                if (val < min) input.value = min;
+                else if (val > max) input.value = max;
+            });
+        }*/
+
+        // Adicionar ao carrinho
+        function addToCart(produtoId) {
+            const quantidade = parseInt(document.getElementById(`qty-${produtoId}`).value) || 0;
+            
+            if (quantidade === 0) {
+                alert('Selecione uma quantidade válida');
+                return;
+            }
+
+            const produto = produtos.find(p => p.id === produtoId);
+            const itemExistente = carrinho.find(item => item.id === produtoId);
+
+            if (itemExistente) {
+                itemExistente.quantidade += quantidade;
+            } else {
+                carrinho.push({
+                    id: produto.id,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: quantidade
+                });
+            }
+
+            // Reset quantity input
+            document.getElementById(`qty-${produtoId}`).value = 0;
+
+            // Salvar carrinho
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            
+            // Atualizar interface
+            updateCartDisplay();
+        }
+
+        // Atualizar exibição do carrinho
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartCount = document.getElementById('cartCount');
+            const cartTotal = document.getElementById('cartTotal');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+
+            if (carrinho.length === 0) {
+                cartItems.innerHTML = '<p style="color: var(--light-gray); text-align: center; padding: 2rem 0;">Seu carrinho está vazio</p>';
+                cartCount.textContent = '0';
+                cartTotal.textContent = 'R$ 0,00';
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            const totalItens = carrinho.reduce((sum, item) => sum + item.quantidade, 0);
+            const totalValor = carrinho.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+
+            cartItems.innerHTML = carrinho.map(item => `
+                <div class="order-item">
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.8rem">${item.nome}</div>
+                        <div style="font-size: 0.8rem; color: var(--primary-teal);">
+                            ${item.quantidade}x R$ ${item.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: var(--primary-teal); font-size: 13px">R$ ${(item.preco * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button 
+                            onclick="removeFromCart(${item.id})" 
+                            style="background: none; border: none; color: var(--medium-gray); cursor: pointer; font-size: 0.8rem;"
+                        >
+                            Remover
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            cartCount.textContent = totalItens;
+            cartTotal.textContent = `R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            checkoutBtn.disabled = false;
+        }
+
+        // Remover do carrinho
+        function removeFromCart(produtoId) {
+            carrinho = carrinho.filter(item => item.id !== produtoId);
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+            updateCartDisplay();
+        }
+
+        // Ir para checkout
+        function goToCheckout() {
+            if (carrinho.length === 0) {
+                alert('Seu carrinho está vazio');
+                return;
+            }
+            window.location.href = 'checkout.html';
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkLogin()) return;
+            
+            loadClienteData();
+            loadProdutos();
+            
+            // Carregar carrinho salvo
+            const carrinhoSalvo = localStorage.getItem('carrinho');
+            if (carrinhoSalvo) {
+                carrinho = JSON.parse(carrinhoSalvo);
+                updateCartDisplay();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmacas e Farmix - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+                <div class="card" style="max-width: 400px; width: 100%;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <img
+                            src="logo-encontro-farmarcas.png" 
+                            alt="Logo Farmix" 
+                            style="width: 250px; height: auto; margin-bottom: 1px;">
+                        </img>
+                        <h1 style="color: var(--light-gray); font-size: 2rem; margin-bottom: 0.5rem;">
+                        </h1>
+                        <span style="color: #000000;">Painel Exclusivo de Pedidos Farmix</span>
+                        <br><br><span style="color: #000000;">
+                            Digite o CNPJ para continuar
+                        </span>
+                    </div>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="cnpj" class="form-label"></label>
+                            <input 
+                                type="text" 
+                                id="cnpj" 
+                                name="cnpj" 
+                                class="form-input" 
+                                placeholder="00.000.000/0000-00"
+                                required
+                                maxlength="18"
+                            >
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            Entrar
+                        </button>
+                    </form>
+                    <!-- Botão Informar Pedido OL -->
+                    <button type="button" id="btnInformarPedidoOL" class="btn btn-oplog" style="width: 100%;">
+                        Informar Pedido OL
+                    </button>
+                    <div id="errorMessage" class="alert alert-error" style="display: none; margin-top: 1rem;">
+                        CNPJ não encontrado ou bloqueado. Verifique e tente novamente.
+                    </div>
+                    
+                    <!--
+                    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e0; text-align: center;">
+                        <p style="color: var(--medium-gray); font-size: 0.9rem;">
+                            <strong>CNPJs de teste:</strong><br>
+                            12.345.678/0001-90 (Empresa ABC Ltda)<br>
+                            98.765.432/0001-10 (Comércio XYZ S.A.)
+                        </p>
+                    </div> -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Redirecionamento para form-ol.html
+        document.getElementById('btnInformarPedidoOL').addEventListener('click', function() {
+            window.location.href = 'form-ol.html';
+        });
+
+        // Formatação automática do CNPJ
+        document.getElementById('cnpj').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length <= 14) {
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            }
+            
+            e.target.value = value;
+        });
+
+
+        // Submissão do formulário
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const cnpj = document.getElementById('cnpj').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            // Esconder mensagem de erro
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ cnpj: cnpj })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Salvar dados do cliente no localStorage
+                    localStorage.setItem('cliente', JSON.stringify(data.cliente));
+                    
+                    // Redirecionar para página inicial
+                    window.location.href = 'home.html';
+                } else {
+                    // Mostrar erro
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+

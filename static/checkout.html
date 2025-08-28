@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Pedido do Mega Feirão</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilo customizado para selects */
+        .form-select {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: var(--hard-blue);
+            color: var(--light-gray);
+            font-size: 1rem;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-teal);
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="static/logo-800x600.png" alt="Logo Farmix" style="width: 150px; height: auto; margin-right: 1rem;" />
+                    <span class="logo-text" style="font-size: 1.5rem; color: var(--primary-teal)">Farmarcas e Farmix. Sua melhor opção!</span>
+                </div>
+                <div class="user-info">
+                    <span id="clienteName">Carregando...</span>
+                    <div class="limite-badge">
+                        Limite Disponível: R$ <span id="limiteDisponivel">0,00</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="logout()" style="color: white; border-color: white;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação -->
+    <nav class="nav">
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="home.html">Promoções</a></li>
+                <li><a href="checkout.html" class="active">Finalizar Pedido</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <h2 style="color: var(--light-gray); margin-bottom: 2rem;">Finalizar Pedido</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 400px; gap: 3rem;">
+                <!-- Formulário de Finalização -->
+                <div>
+                    <!-- Resumo dos Itens -->
+                    <div class="card">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">Itens do Pedido</h3>
+                        <div id="orderItems"></div>
+                    </div>
+
+                    <!-- Detalhes do Pedido -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">Detalhes do Pedido</h3>
+                        
+                        <form id="checkoutForm">
+                            <!-- Responsável pelo Pedido -->
+                            <div class="form-group">
+                                <label for="responsavelPedido" class="form-label">Responsável pelo Pedido</label>
+                                <select id="responsavelPedido" name="responsavelPedido" class="form-select" required>
+                                    <option value="">Carregando responsáveis...</option>
+                                </select>
+                            </div>
+
+                            <!-- Plano de Pagamento -->
+                            <div class="form-group">
+                                <label for="planoPagamento" class="form-label">Plano de Pagamento</label>
+                                <select id="planoPagamento" name="planoPagamento" class="form-select" required>
+                                    <option value="">Carregando planos...</option>
+                                </select>
+                            </div>
+
+                            <div id="paymentDetails" style="margin-top: 1rem; padding: 1rem; color: var(--primary-blue); border-radius: 5px;"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Resumo Final -->
+                <div>
+                    <div class="card" style="position: sticky; top: 2rem;">
+                        <h3 style="color: var(--yellow-light); margin-bottom: 1.5rem;">Resumo do Pedido</h3>
+                        <span>Pedido mínimo: R$300,00<br></span>
+                        <span id="productsTitle">Carregando...<br></span>
+                        
+                        <div class="order-item">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">R$ 0,00</span>
+                        </div>
+                        
+                        <div class="order-item" id="discountProgressivoRow" style="display: none;">
+                            <span style="color: #004202;">Desconto Financeiro:</span>
+                            <span id="discountProgressivo" style="color: #004202;">- R$ 0,00</span>
+                        </div>
+
+                        <div class="order-item" id="discountLaboratorioRow" style="display: none;">
+                            <span style="color: #004202;">Desconto Financeiro:</span>
+                            <span id="discountLaboratorio" style="color: #004202;">- R$ 0,00</span>
+                        </div>
+
+                        <div class="order-item" style="font-size: 1.2rem; font-weight: bold; color: var(--yellow-light); border-top: 2px solid var(--light-gray); padding-top: 1rem;">
+                            <span>Total NF:</span>
+                            <span id="totalFinal">R$ 0,00</span>
+                        </div>
+                        <div class="order-item" style="font-size: 1.2rem; font-weight: bold; color: var(--yellow-light); border-top: 2px solid var(--light-gray); padding-top: 1rem;">
+                            <span>Total A Pagar:</span>
+                            <span id="totalAPagar">R$ 0,00</span>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                            <div style="font-size: 0.9rem; color: var(--light-gray); margin-bottom: 1rem;">
+                                <strong>Limite disponível:</strong> R$ <span id="limiteRestante">0,00</span>
+                            </div>
+                            
+                            <div id="limitAlert" class="alert alert-warning" style="display: none;">
+                                ⚠️ O valor do pedido excede seu limite disponível!
+                            </div>
+                        </div>
+                        
+                        <button 
+                            id="finalizeBtn" 
+                            class="btn btn-accent" 
+                            style="width: 100%; margin-top: 1.5rem; font-size: 1.1rem; padding: 1rem;" 
+                            onclick="finalizarPedido()"
+                            disabled
+                        >
+                            Confirmar Pedido
+                        </button>
+                        
+                        <button 
+                            class="btn btn-outline" 
+                            style="width: 100%; margin-top: 1rem;" 
+                            onclick="voltarParaCompras()"
+                        >
+                            Continuar Comprando
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; max-width: 500px; width: 90%;">
+            <h3 style="color: var(--primary-blue); margin-bottom: 1rem;">Pedido Enviado com Sucesso!</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--medium-gray);">O pedido foi registrado. Obrigado!</p>
+            <div style="text-align: center;">
+                <button class="btn btn-primary" onclick="logout()">Voltar para a página inicial</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cliente = null;
+        let carrinho = [];
+        let subtotalValue = 0;
+        let totalFinalValue = 0;
+        let totalAPagar = 0;
+
+        function checkLogin() {
+            const clienteData = localStorage.getItem('cliente');
+            if (!clienteData) { window.location.href = 'index.html'; return false; }
+            cliente = JSON.parse(clienteData);
+            return true;
+        }
+
+        function logout() {
+            localStorage.removeItem('cliente');
+            localStorage.removeItem('carrinho');
+            window.location.href = 'index.html';
+        }
+
+        function loadClienteData() {
+            document.getElementById('clienteName').textContent = cliente.nome;
+            document.getElementById('limiteDisponivel').textContent = 
+                cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        function loadOrderItems() {
+            const carrinhoSalvo = localStorage.getItem('carrinho');
+            if (!carrinhoSalvo) { window.location.href = 'home.html'; return; }
+            carrinho = JSON.parse(carrinhoSalvo);
+            if (carrinho.length === 0) { window.location.href = 'home.html'; return; }
+            renderOrderItems();
+            calculateTotals();
+        }
+
+        function loadPriceSystem() {
+            document.getElementById('productsTitle').textContent = 
+                cliente.filial === 1 
+                    ? 'Impostos não inclusos' 
+                    : '';  
+        }
+
+        // Renderiza itens do pedido
+        function renderOrderItems() {
+            const container = document.getElementById('orderItems');
+            container.innerHTML = carrinho.map(item => `
+                <div class="order-item">
+                    <div>
+                        <div style="font-weight: 500;">${item.nome}</div>
+                        <div style="font-size: 0.9rem; color: var(--light-gray);">
+                            Lab.: ${item.laboratorio} | Quantidade: ${item.quantidade} | Preço unitário: R$ ${item.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div style="font-weight: bold;">
+                        R$ ${(item.preco * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function calculateTotals() {
+            // Calcula subtotal
+            subtotalValue = carrinho.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+            const planoPagamento = document.getElementById('planoPagamento').value;
+            const responsavelId = document.getElementById('responsavelPedido').value;
+
+            let descontoProgressivo = 0;
+            let descontoLaboratorio = 0;
+
+            // Desconto progressivo por valor total
+            if (subtotalValue > 5000) {
+                descontoProgressivo = parseFloat((subtotalValue * 0.05).toFixed(2));
+            } else if (subtotalValue > 4000) {
+                descontoProgressivo = parseFloat((subtotalValue * 0.04).toFixed(2));
+            } else if (subtotalValue > 2000) {
+                descontoProgressivo = parseFloat((subtotalValue * 0.03).toFixed(2));
+            }
+
+            // Desconto por laboratório
+            const laboratoriosDesconto = ['airela', 'catarinense', 'geolab', 'legrand', 'teuto', 'vitamedic'];
+            const totaisPorLab = {};
+
+            carrinho.forEach(item => {
+                const lab = item.laboratorio?.toLowerCase();
+                if (laboratoriosDesconto.includes(lab)) {
+                    if (!totaisPorLab[lab]) totaisPorLab[lab] = 0;
+                    totaisPorLab[lab] += item.preco * item.quantidade;
+                }
+            });
+
+            for (const lab in totaisPorLab) {
+                if (totaisPorLab[lab] >= 10000) {
+                    descontoLaboratorio += parseFloat((totaisPorLab[lab] * 0.10).toFixed(2));
+                }
+            }
+
+            // Soma total dos descontos
+            const descontoTotal = descontoProgressivo + descontoLaboratorio;
+            totalFinalValue = parseFloat((subtotalValue).toFixed(2)); //totalFinalValue = parseFloat((subtotalValue - descontoTotal).toFixed(2));
+            totalAPagar = parseFloat((subtotalValue - descontoTotal).toFixed(2));
+
+            // Atualiza os valores no HTML
+            document.getElementById('subtotal').textContent = `R$ ${subtotalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('totalFinal').textContent = `R$ ${totalFinalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('totalAPagar').textContent = `R$ ${totalAPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('limiteRestante').textContent = cliente.limite_disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            // // Exibe desconto progressivo se houver
+            // if (descontoProgressivo > 0) {
+            //     document.getElementById('discountProgressivoRow').style.display = 'flex';
+            //     document.getElementById('discountProgressivo').textContent = `- R$ ${descontoProgressivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            // } else {
+            //     document.getElementById('discountProgressivoRow').style.display = 'none';
+            // }
+
+            // Exibe desconto por laboratório se houver
+            if (descontoLaboratorio > 0) {
+                document.getElementById('discountLaboratorioRow').style.display = 'flex';
+                document.getElementById('discountLaboratorio').textContent = `- R$ ${descontoLaboratorio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            } else if (descontoProgressivo > 0) {
+                document.getElementById('discountProgressivoRow').style.display = 'flex';
+                document.getElementById('discountProgressivo').textContent = `- R$ ${descontoProgressivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            } else {
+                document.getElementById('discountProgressivoRow').style.display = 'none';
+                document.getElementById('discountLaboratorioRow').style.display = 'none';
+            }
+
+            // // Exibe linha geral de desconto se houver qualquer um
+            // if (descontoTotal > 0) {
+            //     document.getElementById('discountRow').style.display = 'flex';
+            //     document.getElementById('discount').textContent = `- R$ ${descontoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            // } else {
+            //     document.getElementById('discountRow').style.display = 'none';
+            // }
+
+            // Validação de campos obrigatórios e limite
+            const limitAlert = document.getElementById('limitAlert');
+            const finalizeBtn = document.getElementById('finalizeBtn');
+
+            if (!responsavelId) {
+                limitAlert.textContent = 'Selecione um responsável pelo pedido';
+                limitAlert.style.display = 'block';
+                finalizeBtn.disabled = true;
+                finalizeBtn.textContent = 'Selecione o Responsável';
+            } else if (!planoPagamento) {
+                limitAlert.textContent = 'Selecione um plano de pagamento';
+                limitAlert.style.display = 'block';
+                finalizeBtn.disabled = true;
+                finalizeBtn.textContent = 'Selecione o Plano';
+            } else if (totalFinalValue > cliente.limite_disponivel) {
+                limitAlert.textContent = 'O valor do pedido excede o limite disponível';
+                limitAlert.style.display = 'none';
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Confirmar Pedido Bloqueado';
+            } else {
+                limitAlert.style.display = 'none';
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Confirmar Pedido';
+            }
+        }
+        async function carregarPlanosPagamento()
+            { try { 
+                const response = await fetch('/api/cliente/planos-pagamento');
+                if (response.ok) { 
+                    const planos = await response.json(); 
+                    const select = document.getElementById('planoPagamento'); 
+                    select.innerHTML = '<option value="">Selecione uma opção</option>'; 
+                    planos.forEach(plano => { 
+                        const option = document.createElement('option'); 
+                        option.value = plano.codigo; 
+                        option.textContent = plano.descricao; 
+                        select.appendChild(option); 
+                    }); 
+                } else { carregarPlanosDefault(); } 
+            } catch (error) { carregarPlanosDefault(); } 
+        }
+
+        function carregarPlanosDefault() {
+            const select = document.getElementById('planoPagamento');
+            select.innerHTML = '<option value="">Selecione uma opção</option>';
+            const planos = [
+                { value: '0', text: 'A VISTA ANTECIPADO' }
+            ];
+            planos.forEach(plano => {
+                const option = document.createElement('option');
+                option.value = plano.value;
+                option.textContent = plano.text;
+                select.appendChild(option);
+            });
+        }
+
+        function setupPaymentPlan() {
+            const select = document.getElementById('planoPagamento');
+            select.addEventListener('change', calculateTotals);
+        }
+
+        async function carregarResponsaveis() {
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                // Ordena os usuários pelo nome (username) em ordem alfabética
+                data.sort((a, b) => a.username.localeCompare(b.username));
+                const select = document.getElementById('responsavelPedido');
+                select.innerHTML = '<option value="">Selecione um responsável</option>';
+                data.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.username;
+                    select.appendChild(option);
+                });
+                // Atualiza botão ao selecionar responsável
+                select.addEventListener('change', calculateTotals);
+            } catch (error) {
+                console.error('Erro ao carregar responsáveis:', error);
+                document.getElementById('responsavelPedido').innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        async function finalizarPedido() {
+            const planoPagamento = document.getElementById('planoPagamento').value;
+            const responsavelId = document.getElementById('responsavelPedido').value;
+
+            if (!responsavelId) { 
+                alert('Selecione um responsável pelo pedido'); 
+                return; 
+            }
+            if (!planoPagamento) { 
+                alert('Selecione um plano de pagamento'); 
+                return; 
+            }
+            if (totalFinalValue > cliente.limite_disponivel) {
+                if (!confirm("⚠️ O valor do pedido excede seu limite disponível. O pedido será enviado BLOQUEADO para análise financeira. Deseja continuar?")) {
+                    return;
+                }
+            }
+            if (totalFinalValue < 300) { 
+                alert('O pedido mínimo é de R$ 300,00'); 
+                return; 
+            }
+
+            try {
+                const payload = {
+                    cliente_id: cliente.id,
+                    cliente_nome: cliente.nome,
+                    itens: carrinho,
+                    plano_pagamento: planoPagamento,
+                    responsavel_id: responsavelId,
+                    valor_total: totalFinalValue,
+                    valor_total_desconto: totalAPagar,
+                    limite_disponivel: cliente.limite_disponivel
+                };
+                
+                console.log("Payload enviado:", JSON.stringify(payload, null, 2));
+                const response = await fetch('/api/pedidos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    localStorage.removeItem('carrinho');
+                    document.getElementById('confirmModal').style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    alert('Erro ao finalizar pedido: ' + (errorData.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao finalizar pedido. Tente novamente.');
+            }
+        }
+
+        function voltarParaCompras() { window.location.href = 'home.html'; }
+        function voltarParaInicio() { window.location.href = 'home.html'; }
+        function voltarParaIndex() { window.location.href = 'index.html'; }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkLogin()) return;
+            loadPriceSystem();
+            loadClienteData();
+            loadOrderItems();
+            carregarPlanosPagamento();
+            setupPaymentPlan();
+            carregarResponsaveis();
+        });
+    </script>
+</body>
+</html>

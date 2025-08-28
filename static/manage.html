@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport-admin" content="width=device-width, initial-scale=1.0">
+    <title>Farmacas e Farmix - Gestão de Pedidos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+                <div class="card" style="max-width: 400px; width: 100%;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <img
+                            src="logo-encontro-farmarcas.png" 
+                            alt="Logo Farmix" 
+                            style="width: 250px; height: auto; margin-bottom: 1px;">
+                        </img>
+                        <h1 style="color: var(--light-gray); font-size: 2rem; margin-bottom: 0.5rem;">
+                        </h1>
+                        <span style="color: #000000;">Painel de Gestão de Pedidos Farmix</span>
+                        <br><br><span style="color: #000000;">
+                            Digite o código de acesso
+                        </span>
+                    </div>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="codacess" class="form-label"></label>
+                            <input 
+                                type="text" 
+                                id="codacess" 
+                                name="codacess" 
+                                class="form-input" 
+                                placeholder="123456"
+                                required
+                                maxlength="6"
+                            >
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            Entrar
+                        </button>
+                    </form>
+                    <div id="errorMessage" class="alert alert-error" style="display: none; margin-top: 1rem;">
+                        Código de acesso inválido ou não autorizado
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Submissão do formulário
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const codacess = document.getElementById('codacess').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            // Esconder mensagem de erro
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/login/manager', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: codacess })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.id && data.username) {
+                    // Salvar dados do admin no localStorage
+                    localStorage.setItem('codacess', data.id);
+                    localStorage.setItem('username', data.username);
+
+                    // Redirecionar para página inicial
+                    window.location.href = 'manage-home.html';
+                } else {
+                    // Mostrar erro
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                errorDiv.style.display = 'block';
+                document.getElementById('codacess').value = '';
+                document.getElementById('codacess').focus();
+            }
+        });
+    </script>
+</body>
+</html>
+
