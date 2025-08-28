@@ -275,8 +275,8 @@ pip install flask flask-cors flask-sqlalchemy python-dotenv jaydebeapi jpype1 ps
 #### PostgreSQL
 ```sql
 CREATE DATABASE app;
-CREATE USER jose WITH PASSWORD '$J0s3luc4s$';
-GRANT ALL PRIVILEGES ON DATABASE app TO jose;
+CREATE USER user WITH PASSWORD 'postgres';
+GRANT ALL PRIVILEGES ON DATABASE app TO user;
 ```
 
 #### Oracle
@@ -284,14 +284,14 @@ Certifique-se de que o banco Oracle esteja acessível e as credenciais estejam c
 
 ### 3. Configuração das Variáveis de Ambiente
 
-Crie o arquivo `.env` na raiz do projeto:
+Crie o arquivo `.env` na raiz do projeto conforme .envexample:
 
 ```env
 # PostgreSQL
 POSTGRE_HOST=localhost
-POSTGRE_USER=jose
-POSTGRE_DB=app
-POSTGRE_PASSWORD=$J0s3luc4s$
+POSTGRE_USER=seu_usuario
+POSTGRE_DB=seu_banco
+POSTGRE_PASSWORD=sua_senha
 
 # Oracle
 ORACLE_HOST=192.168.xx.xxx
@@ -300,7 +300,7 @@ ORACLE_SERVICE=WINT
 ORACLE_USER=xxxxxx
 ORACLE_PASSWORD=xxxxxx
 JDBC_JAR_PATH=src/database/ojdbc17.jar
-JDBC_URL=jdbc:oracle:thin:@//ORACLE_HOST/ORACLE_SERVICE
+JDBC_URL=jdbc:oracle:thin:@//ORACLE_HOST:ORACLE_PORT/ORACLE_SERVICE
 JDBC_DRIVER_NAME=oracle.jdbc.driver.OracleDriver
 
 # Java
@@ -311,7 +311,7 @@ JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 ```bash
 # Executar a aplicação
-python src/main.py
+python main.py
 
 # A aplicação estará disponível em:
 # http://localhost:5001
@@ -410,7 +410,7 @@ O sistema inclui logging abrangente:
 ### Docker (Recomendado)
 
 ```dockerfile
-FROM python:3.9-slim
+FROM python:3.9-slim-bullseye
 
 # Instalar Java
 RUN apt-get update && apt-get install -y default-jre
